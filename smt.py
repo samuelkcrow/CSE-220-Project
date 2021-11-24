@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Script to generate random RISC-V instruction sequences
+# and use the z3 SMT solver to prove they don't seg-fault
 
 from z3 import *
 import random
@@ -12,14 +14,13 @@ def check_asm_add_sub_load(add_val, sub_val, addr_imm_val, min_addr_val, max_add
     s.add(addr>min_addr_val)
     s.add(addr<max_addr_val)
     result = s.check()
-    #print(result)
+    print(s.assertions())
     #print (s.model())
     return result == sat
 
-# print(check_asm_add_sub_load(0,0,10000,0,20000))
-# print(check_asm_add_sub_load(0,0,10000,0,1000))
+print(check_asm_add_sub_load(10, 3, 15, 0, 40))
 
-class RiscvInst:
+class Inst:
     def __init__(self, op, rd, rs1, rs2, imm):
         self.op = op
         self.rd = rd
@@ -34,25 +35,38 @@ class RiscvInst:
     imm_min = -2048
     imm_max = 2047
 
-def random_riscv_inst(num_regs):
-    inst = RiscvInst(random.choice(RiscvInst.op_list), \
+def rand_inst(num_regs):
+    inst = Inst(random.choice(Inst.op_list), \
         random.randrange(num_regs), \
         random.randrange(num_regs), \
         random.randrange(num_regs), \
-        random.randrange(RiscvInst.imm_min, RiscvInst.imm_max))
+        random.randrange(Inst.imm_min, Inst.imm_max))
     return inst
 
 
-def random_riscv_sequence(num_instructions, num_regs):
+def rand_inst_seq(num_inst, num_regs):
     inst_sequence = []
-    for i in range(num_instructions):
-        inst_sequence.append(random_riscv_inst(num_regs))
+    for i in range(num_inst):
+        inst_sequence.append(rand_inst(num_regs))
     return inst_sequence
 
+def solve_inst_seq(inst_seq, num_regs):
+    a = AstRef()
+    regs = []
+    for i in range(num_regs):
+        regs.append(0)
+    for inst in inst_seq:
+        if inst.op == 'add':
+            s.add(regs[inst.rd - 1]==regs[inst.rs1 -1]+regs[inst.rs2 - 1])
+    print(s.check())
+    print(s.assertions())
 
-min_addr = 0
-max_addr = 10000
 
-inst_seq = random_riscv_sequence(5, 3)
-for inst in inst_seq:
-    inst.print() 
+if __name__ == '__main__':
+    min_addr = 0
+    max_addr = 10000
+
+    inst_seq = rand_inst_seq(5, 3)
+    for inst in inst_seq:
+        inst.print()
+    solve_inst_seq(inst_seq, 3)
