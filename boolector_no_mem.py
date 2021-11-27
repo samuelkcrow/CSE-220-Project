@@ -57,14 +57,13 @@ def Addi(rd, rs1, rs2, imm):
 
 def Lw(rd, rs1, rs2, imm):
     print("lw r%d, 0(r%d)" % (rd, rs1))
-    rs1 = regs_get(rs1)
     b.Push()
-    b.Assert(rs1 >= r0)
-    b.Assert(rs1 < 8)
+    b.Assert(regs_get(rs1) >= r0)
+    b.Assert(regs_get(rs1) < 1)
     if b.Sat() == b.SAT:
         print("Load address: VALID")
         b.Pop()
-        return mem[rs1[2:]]
+        return 8
     else:
         print("Load address: INVALID")
         b.Pop()
@@ -93,16 +92,6 @@ r1 = r0 + r0
 r2 = r0 + r0
 r3 = r0 + r0
 
-# Write values to mem
-mem = b.Write(mem, 0, 0x00)
-mem = b.Write(mem, 1, 0x11)
-mem = b.Write(mem, 2, 0x22)
-mem = b.Write(mem, 3, 0x33)
-mem = b.Write(mem, 4, 0x44)
-mem = b.Write(mem, 5, 0x55)
-mem = b.Write(mem, 6, 0x66)
-mem = b.Write(mem, 7, 0x77)
-
 # # Add r1, r0, r0
 # r1 = Add(1, 0, 0, 0)
 # # Add r2, r0, r0
@@ -126,3 +115,13 @@ regs_list = [r0, r1, r2, r3]
 b.Sat()
 for reg in regs_list:
     print(reg.assignment)
+
+# # Write 0 values to mem
+# mem = b.Write(mem, 0, 0)
+# mem = b.Write(mem, 1, 0)
+# mem = b.Write(mem, 2, 0)
+# mem = b.Write(mem, 3, 0)
+# mem = b.Write(mem, 4, 0)
+# mem = b.Write(mem, 5, 0)
+# mem = b.Write(mem, 6, 0)
+# mem = b.Write(mem, 7, 0)
