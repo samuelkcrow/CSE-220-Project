@@ -2,6 +2,9 @@ import random
 import pyboolector
 from pyboolector import Boolector#, BoolectorException
 
+#---------------------Arguments------------------------#
+NUM_RAND_INSTRUCTIONS = 3
+
 #---------------------SMT Setup------------------------#
 
 # Create Bolector instance
@@ -27,9 +30,6 @@ r3 = b.Var(bvsort32, "r3")
 # Create constants
 r0 = b.Const(0, 32)
 
-
-
-
 #----------------Function Declerations-----------------#
 
 def regs_get(regid):
@@ -48,29 +48,49 @@ def regs_set(regid, val):
         r3 = val
 
 def Add(rd, rs1, rs2, imm):
-    print("add r%d, r%d, r%d" % (rd, rs1, rs2))
+    print("add a%d, a%d, a%d" % (rd, rs1, rs2))
     return regs_get(rs1) + regs_get(rs2)
 
 def Addi(rd, rs1, rs2, imm):
-    print("addi r%d, r%d, %i" % (rd, rs1, imm))
+    print("addi a%d, a%d, %i" % (rd, rs1, imm))
     return regs_get(rs1) + imm
 
 def Lw(rd, rs1, rs2, imm):
-    print("lw r%d, 0(r%d)" % (rd, rs1))
+    print("lw a%d, 0(a%d)" % (rd, rs1), end=" ")
     rs1 = regs_get(rs1)
     b.Push()
     b.Assert(rs1 >= r0)
     b.Assert(rs1 < 8)
     if b.Sat() == b.SAT:
-        print("Load address: VALID")
+        print("")
         b.Pop()
         return mem[rs1[2:]]
     else:
-        print("Load address: INVALID")
+        print("//ADDRESS INVALID, DELETE THIS INSTRUCTION")
         b.Pop()
         return -1
 
-# Define operations collection
+###### I decided to comment out Sw instruction because
+###### it's complicated to follow its execution in a sequence
+# def Sw(rd, rs1, rs2, imm):
+#     print("sw a%d, 0(a%d)" % (rs1, rs2))
+#     rs1 = regs_get(rs1)
+#     rs2 = regs_get(rs2)
+#     b.Push()
+#     b.Assert(rs1 >= r0)
+#     b.Assert(rs1 < 8)
+#     if b.Sat() == b.SAT:
+#         print("Store address: VALID")
+#         global mem
+#         mem = b.Write(mem, rs1[2:], rs2)
+#         b.Pop()
+#         return 0
+#     else:
+#         print("Store address: INVALID")
+#         b.Pop()
+#         return -1
+
+# Define operations list
 ops_list = [Add, Addi, Lw]
 
 def Rand_Inst():
@@ -80,20 +100,18 @@ def Rand_Inst():
     imm = random.randrange(8)
     op  = random.choice(ops_list)
     result = op(rd, rs1, rs2, imm)
-    if result >= 0:
+    if result >= 0: # Filter out invalid loads
         regs_set(rd, r0 + result)
-    else:
-        print("Omit pervious instruction")
     return
-
 
 #----------------------Main Code-----------------------#
 
+# Initialize registers to 0
 r1 = r0 + r0
 r2 = r0 + r0
 r3 = r0 + r0
 
-# Write values to mem
+# Write initial values to mem
 mem = b.Write(mem, 0, 0x00)
 mem = b.Write(mem, 1, 0x11)
 mem = b.Write(mem, 2, 0x22)
@@ -103,26 +121,19 @@ mem = b.Write(mem, 5, 0x55)
 mem = b.Write(mem, 6, 0x66)
 mem = b.Write(mem, 7, 0x77)
 
-# # Add r1, r0, r0
-# r1 = Add(1, 0, 0, 0)
-# # Add r2, r0, r0
-# r2 = Add(2, 0, 0, 0)
-# # Add r3, r0, r0
-# r3 = Addi(3, 0, 0, 100)
-
-regs_list = [r0, r1, r2, r3]
 b.Sat()
+print("Contents of a1, a2, a3")
+regs_list = [r1, r2, r3]
 for reg in regs_list:
     print(reg.assignment)
 
-Rand_Inst()
-Rand_Inst()
-Rand_Inst()
-Rand_Inst()
-Rand_Inst()
-Rand_Inst()
+print("\nRandom instruction sequence of length", NUM_RAND_INSTRUCTIONS)
 
-regs_list = [r0, r1, r2, r3]
+for _ in range(NUM_RAND_INSTRUCTIONS):
+    Rand_Inst()
+
 b.Sat()
+print("\nContents of a1, a2, a3")
+regs_list = [r1, r2, r3]
 for reg in regs_list:
     print(reg.assignment)
