@@ -5,17 +5,20 @@
 from z3 import *
 import random
 
-def check_asm_add_sub_load(add_val, sub_val, addr_imm_val, min_addr_val, max_addr_val):
+def check_asm_add_sub_load(add_val, sub_val, addr_imm_val, \
+        min_addr_val, max_addr_val):
+    # Z3 declerations
     s=Solver()
     add,sub,addr=Ints('add sub addr')
+    # Creating boolean assertions in Z3
     s.add(addr==addr_imm_val+add_val-sub_val)
     s.add(add==add_val)
     s.add(sub==sub_val)
     s.add(addr>min_addr_val)
     s.add(addr<max_addr_val)
+    #Checking SATisfiability
     result = s.check()
     print(s.assertions())
-    #print (s.model())
     return result == sat
 
 print(check_asm_add_sub_load(10, 3, 15, 0, 40))

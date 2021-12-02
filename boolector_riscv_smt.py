@@ -3,7 +3,7 @@ import pyboolector
 from pyboolector import Boolector#, BoolectorException
 
 #---------------------Arguments------------------------#
-NUM_RAND_INSTRUCTIONS = 3
+NUM_RAND_INSTRUCTIONS = 100000
 
 #---------------------SMT Setup------------------------#
 
